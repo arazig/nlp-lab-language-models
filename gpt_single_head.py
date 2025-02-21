@@ -75,6 +75,7 @@ class Head(nn.Module):
         # define the Value layer
         self.value =  nn.Linear(n_embd, head_size)
 
+        self.head_size = math.sqrt(head_size)
         ###
         self.register_buffer('tril', torch.tril(torch.ones(block_size, block_size)))
 
@@ -87,8 +88,9 @@ class Head(nn.Module):
         q = self.query(x)  # (B, T, head_size)
         v = self.value(x)  # (B, T, head_size)
         # compute the normalize product between Q and K 
-        weights = q @ k.transpose(-2, -1) / math.sqrt(head_size)# (B, T, head_size) @ (B, 16, head_size) -> (B, T, T)
+        weights = q @ k.transpose(-2, -1) / math.sqrt(self.head_size)# (B, T, head_size) @ (B, 16, head_size) -> (B, T, T)
         # apply the mask (lower triangular matrix)
+        tril = torch.tril(torch.ones(T,T))
         weights = weights.masked_fill(tril== 0, float('-inf'))
         # apply the softmax
         weights = nn.functional.softmax(weights, dim=-1)
